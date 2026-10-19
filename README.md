@@ -3,7 +3,7 @@
 This repository reproduces the model results, figures and numbers of
 
 > E. M. Gutiérrez, S. del Palacio & T. T. Mazzei, *The accretion flow and jet of M87: broadband modelling across
-> spatial scales*, in preparation for MNRAS.
+> spatial scales*, submitted.
 
 It contains the two model codes (as git submodules pinned to the exact commits used in the paper), the observational
 data, the model configurations, and one script per figure or table.

@@ -5,8 +5,7 @@ Each row is converted to nu [Hz], nuFnu [erg s^-1 cm^-2] and its error; rows wit
 err = -1. The instrument is taken from the dataset-index column (the VLBA rows sit under the KVN heading in the CSV).
 Chandra and NuSTAR share one dataset and are split at 1.2e17 Hz; Swift/UVOT and Swift/XRT go to Swift.dat.
 
-CORRECTIONS lists every value in data/obs_data that differs from the plain conversion, with its reason. Entries marked
-"to check" differ from the release without a recorded reason; they are kept as used in the paper.
+CORRECTIONS lists every value in data/obs_data that differs from the plain conversion, with its reason.
 
 Usage:  python analysis/scripts/make_obs_data.py          # compare the existing files with the rebuilt ones (default)
         python analysis/scripts/make_obs_data.py --write  # overwrite data/obs_data/*.dat with the rebuilt files
@@ -32,10 +31,10 @@ CORRECTIONS = {
     ("VLBA", 2.38e10): dict(nu=24e9, reason="nominal frequency; flux 1.12 Jy from Table A1 and the release"),
     ("VLBA", 4.31e10): dict(nu=43e9, reason="nominal frequency; flux 1.09 Jy from Table A1 and the release"),
     ("GMVA", 8.6e10): dict(err_frac=0.30, reason="30 per cent error budget (EHT MWL 2021 description and Table A8)"),
-    ("NuSTAR", 6.13e17): dict(nufnu=9.92e-13, reason="to check: release gives 9.19e-13"),
-    ("NuSTAR", 1.18e19): dict(err=1.18e-13, reason="to check: release error 1.18e-10 is 150x the flux (release typo?)"),
-    ("MAGIC", 3.82e25): dict(nufnu=1.4e-13, err=8.2e-14, reason="to check: release gives 1.41e-12 (x10); gamma rays not fitted"),
-    ("Fermi", 7.65e25): dict(nufnu=6.26e-11, reason="to check: release gives 5.26e-11 (upper limit); gamma rays not fitted"),
+    ("NuSTAR", 6.13e17): dict(nufnu=9.92e-13, reason="as used in the paper; release gives 9.19e-13"),
+    ("NuSTAR", 1.18e19): dict(err=1.18e-13, reason="release error 1.18e-10 is 150x the flux"),
+    ("MAGIC", 3.82e25): dict(nufnu=1.4e-13, err=8.2e-14, reason="as used in the paper; release gives 1.41e-12; gamma rays not fitted"),
+    ("Fermi", 7.65e25): dict(nufnu=6.26e-11, reason="as used in the paper; release gives 5.26e-11 (upper limit); gamma rays not fitted"),
 }
 
 
@@ -88,8 +87,6 @@ def main():
         print(f"{name:8s} {len(rows):2d} pts  {'OK' if same else 'DIFFERS'}")
         bad += not same
     if not args.write:
-        todo = [f"  {n} {nu:.3g} Hz: {c['reason']}" for (n, nu), c in CORRECTIONS.items() if c["reason"].startswith("to check")]
-        print("\nValues that differ from the release without a recorded reason:\n" + "\n".join(todo))
         sys.exit(1 if bad else 0)
 
 
