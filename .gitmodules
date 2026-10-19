@@ -1,0 +1,6 @@
+[submodule "codes/extended-jet"]
+	path = codes/extended-jet
+	url = https://github.com/santimda/ExtendedJet.git
+[submodule "codes/thermal-riaf"]
+	path = codes/thermal-riaf
+	url = https://github.com/eduardomgutierrez/thermal-riaf.git

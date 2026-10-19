@@ -1,0 +1,22 @@
+! Variant C of jet_riaf.nml, compatible with the magnetic field of Ro et al. (2023): only Lj, fnT and p differ.
+! Lengths in R_g, energies in eV. Run with: python analysis/scripts/run_models.py ro_C
+&model
+  M_BH = 6.5d9, dist_mpc = 16.8d0, incl_deg = 17.d0
+  gj0 = 1.01d0
+  z0_rg = 50.d0, zmax_rg = 1.2d6, zmax_inj_rg = 6840.d0
+  r_br_rg = 46.d0, z_br_rg = 140.d0, z_acc_rg = 200.d0, rin_0_rg = 0.d0
+  geomIndex_out = 0.56d0, geomIndex_in = 0.6d0
+  facc = 1d-2, fnT = 0.0014d0, p = 2.02d0
+  EminFF_eV = 1d6, Emin_injFF_eV = 2d6, EmaxFF_eV = 5d15
+  Lj = 1.2d44, sigma_0 = 100d0, a_inj = 0.01d0, gammaIndex = 0.16d0
+/
+&run
+  outdir = 'analysis/runs/ro_C'
+  Ns = 700, numbins = 1100, dttFF_min = 1d-6
+  apertures_rg = 7.3d0, 26d0, 65d0, 131d0, 195d0, 650d0, 3.5d5
+  n_ap = 7
+  sync_approx = 'full'
+  JET_ = .true., CJ_ = .true., NE_calc = .true., Np_calc = .false., radsyn_calc = .true.
+  print_tlosses = .false., sort_outputs = .false.
+  fix_norm_taper = .true., fix_inj_emin = .true.
+/
