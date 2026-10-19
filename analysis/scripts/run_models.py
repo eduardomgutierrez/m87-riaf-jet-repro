@@ -47,8 +47,8 @@ def run_jet(name):
 def run_riaf():
     toml = CONFIGS / "riaf_m87.toml"
     subprocess.run([sys.executable, "riaf_pipeline.py", os.path.relpath(toml, RIAFCODE)], cwd=RIAFCODE, check=True)
-    # riaf_validate.py computes the derived numbers and writes provenance.json for the RIAF run
-    subprocess.run([sys.executable, str(ROOT / "analysis/scripts/riaf_validate.py"), "riaf_m87"], cwd=ROOT, check=True)
+    # riaf_derived.py computes the derived numbers and writes provenance.json for the RIAF run
+    subprocess.run([sys.executable, str(ROOT / "analysis/scripts/riaf_derived.py"), "riaf_m87"], cwd=ROOT, check=True)
 
 
 def main():

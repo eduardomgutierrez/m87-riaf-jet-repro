@@ -1,5 +1,5 @@
 {
- "_about": "Values of the paper runs (ExtendedJet paper-v2, thermal-riaf paper-v1). Each section gives the file under analysis/runs/ and the JSON key it is compared with; check_results.py compares every number with a relative tolerance.",
+ "_about": "Values of the paper runs (ExtendedJet paper-v2.1, thermal-riaf paper-v1). Each section gives the file under analysis/runs/ and the JSON key it is compared with; check_results.py compares every number with a relative tolerance.",
  "sections": {
   "chi2": {
    "file": "chi2.json",

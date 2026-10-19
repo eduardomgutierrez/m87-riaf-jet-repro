@@ -17,7 +17,7 @@ angular scale (EHT multi-wavelength campaign 2017). Two scenarios are modelled: 
 ## Contents
 
 ```
-codes/extended-jet   ExtendedJet (jet code; Fortran 90 + OpenMP, f2py wrapper), tag paper-v2 = 947d7b0
+codes/extended-jet   ExtendedJet (jet code; Fortran 90 + OpenMP, f2py wrapper), tag paper-v2.1 = b36be22
 codes/thermal-riaf   thermal-riaf (RIAF code; Python hydrodynamics + C++ radiative transfer), tag paper-v1 = 5e0cd49
 data/eht_mwl2017/    EHT MWL 2017 data release (EHT MWL Science WG 2021, ApJL 911, L11; DOI 10.25739/mhh2-cw46)
 data/obs_data/       SED points per instrument: nu [Hz], nuF_nu [erg s^-1 cm^-2], error (negative = upper limit)
@@ -79,7 +79,7 @@ Every run writes a `provenance.json` with the code commits and the parameters us
 | Fig. 4, synthetic 43 GHz map | `fig_maps.py` | `output/figures/Map_I_43GHz.pdf`, `analysis/runs/maps.provenance.json` |
 | Fig. 5, spectral-index maps 22–43 and 43–86 GHz | `fig_maps.py` | `output/figures/Map_spix.pdf` |
 | Figs. A1–A2, parameter scans around the Jet+RIAF jet | `fig_scans.py` | `output/figures/Scans_SED.pdf`, `Scans_radio.pdf` |
-| RIAF numbers (Ṁ, L_acc, jet efficiency, compactness of the RIAF emission) | `riaf_validate.py` (run by `make riaf`) | `analysis/runs/riaf_m87/provenance.json` |
+| RIAF numbers (Ṁ, L_acc, jet efficiency, compactness of the RIAF emission) | `riaf_derived.py` (run by `make riaf`) | `analysis/runs/riaf_m87/provenance.json` |
 | Jet numbers (τ = 1 heights and core shift, B′ and σ′ along the jet, 230 GHz flux within a radius) | `derived_quantities.py` | `analysis/runs/derived/derived.json` |
 | Inverse-Compton estimate | `ic_estimate.py` | `analysis/runs/derived/ic_estimate.json` |
 | Ro et al. (2023)-compatible variants (B′, jet efficiency, χ²) | `ro_variants.py` | `analysis/runs/ro_variants.json` |
@@ -98,8 +98,9 @@ gfortran 15 on x86-64 they are. Other compilers or CPUs can change the last digi
 ## Codes
 
 - **ExtendedJet** (S. del Palacio et al.; https://github.com/santimda/ExtendedJet, GPL-3.0), partly based on Molina,
-  del Palacio & Bosch-Ramon (2019, A&A 629, A129). The jet code's own tests run with
-  `make -C codes/extended-jet/Code test` after `make build`.
+  del Palacio & Bosch-Ramon (2019, A&A 629, A129). After `make build`, the jet code's own
+  tests run with `make -C codes/extended-jet/Code test` and its physics validation with
+  `make -C codes/extended-jet/Code validate`.
 - **thermal-riaf** (E. M. Gutiérrez; https://github.com/eduardomgutierrez/thermal-riaf), based on Gutiérrez, Nemmen &
   Cafardo (2020, ApJL 891, L36; https://doi.org/10.3847/2041-8213/ab7998) and Gutiérrez, Vieyro & Romero (2021, A&A 649,
   A87; https://doi.org/10.1051/0004-6361/202039671).
