@@ -100,7 +100,9 @@ gfortran 15 on x86-64 they are. Other compilers or CPUs can change the last digi
 - **ExtendedJet** (S. del Palacio et al.; https://github.com/santimda/ExtendedJet, GPL-3.0), partly based on Molina,
   del Palacio & Bosch-Ramon (2019, A&A 629, A129). The jet code's own tests run with
   `make -C codes/extended-jet/Code test` after `make build`.
-- **thermal-riaf** (E. M. Gutiérrez; https://github.com/eduardomgutierrez/thermal-riaf).
+- **thermal-riaf** (E. M. Gutiérrez; https://github.com/eduardomgutierrez/thermal-riaf), based on Gutiérrez, Nemmen &
+  Cafardo (2020, ApJL 891, L36; https://doi.org/10.3847/2041-8213/ab7998) and Gutiérrez, Vieyro & Romero (2021, A&A 649,
+  A87; https://doi.org/10.1051/0004-6361/202039671).
 
 ## Data
 
