@@ -1,9 +1,8 @@
 """Compare the regenerated results with the values of the paper (reference/expected.json).
 
-Every number in each section of expected.json (chi^2 per band, RIAF derived numbers, jet derived quantities, Ro-compatible
-variants, synthetic-map summary, inverse-Compton estimate) and every spectrum of the parameter scans
-(reference/scans.npz) is compared with the same key of the corresponding file in
-analysis/runs/, with a relative tolerance (default 1e-3). The sha256 of the model flux files is also compared: an
+Every number in each section of expected.json (chi^2 per band, RIAF derived numbers, jet derived quantities,
+synthetic-map summary, inverse-Compton estimate) and every spectrum of the parameter scans (reference/scans.npz) is
+compared with the same key of the corresponding file in analysis/runs/, with a relative tolerance (default 1e-3). The sha256 of the model flux files is also compared: an
 identical hash means a bit-for-bit reproduction, but a different compiler or CPU can change the last digits, so a hash
 mismatch is reported as a note only.
 

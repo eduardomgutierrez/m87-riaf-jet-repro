@@ -23,6 +23,8 @@ for run in ("jet_riaf","jet_only"):
     d=f"{RUNS}/{run}/"
     q=np.loadtxt(d+"quant_FF.dat")
     z,B,R,G,dl,V=q[:,0],q[:,1],q[:,2],q[:,4],q[:,5],q[:,7]
+    if provenance.read_namelist(d+f"{run}.nml")["run"].get("grav_redshift", False):   # D = g delta, as the code
+        dl=dl*np.sqrt(np.clip(1-2*Rg/np.sqrt(z**2+0.5*(R**2+q[:,3]**2)),0,None))
     E,Ls,seg=np.loadtxt(d+"SEDe_syn_cuts.dat",skiprows=1,unpack=True)
     seg=seg.astype(int); Ltot=np.zeros(len(z))
     for s in np.unique(seg):

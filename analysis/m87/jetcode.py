@@ -31,6 +31,8 @@ def setup(nml, fix_norm_taper=None, fix_inj_emin=None, **overrides):
     """
     J = module()
     sp = J.system_parameters
+    J.controls.grav_redshift = False   # a namelist without the entry keeps the module's previous value
+    J.controls.aperture_area = False
     sp.read_namelist(str(nml))
     for k, v in overrides.items():
         k = k.lower()
@@ -57,7 +59,8 @@ def dynamics(sp, z_rg):
 def load_segments(run, jet=""):
     """Per-segment quantities of analysis/runs/<run> (quant_FF<jet>.dat) and the electron spectra (Ne_cuts.dat).
 
-    Returns dict: z [cm, >0], B [G], R (outer) and R_in [cm], Gamma, delta, dz [cm], sigma, E [erg], N (nIn x Ns).
+    Returns dict: z [cm, >0], B [G], R (outer) and R_in [cm], Gamma, delta, dz [cm], sigma, E [erg], N (nIn x Ns),
+    g (gravitational redshift factor as in evolution.f90: 1 unless grav_redshift is on in the namelist loaded by setup()).
     The comoving N(E) is the same for jet and counter-jet (as in synrad.SEDsyn).
     """
     from .paths import RUNS
@@ -67,13 +70,30 @@ def load_segments(run, jet=""):
     E = ne[::ns, 0]
     N = ne[:, 1].reshape(len(E), ns)
     assert np.allclose(ne[:ns, 2], np.arange(1, ns + 1)), "Ne_cuts.dat is not ordered (E outer, segment inner)"
+    g = np.ones(ns)
+    J = module()
+    if bool(J.controls.grav_redshift):
+        r = np.sqrt(q[:, 0]**2 + 0.5 * (q[:, 2]**2 + q[:, 3]**2))
+        g = np.sqrt(np.clip(1 - 2 * float(J.system_parameters.r_g) / r, 0, None))
     return {"z": np.abs(q[:, 0]), "B": q[:, 1], "R": q[:, 2], "R_in": q[:, 3], "Gamma": q[:, 4], "delta": q[:, 5],
-            "dz": q[:, 10], "sigma": q[:, 12], "Le": q[:, 13], "E": E, "N": N}
+            "dz": q[:, 10], "sigma": q[:, 12], "Le": q[:, 13], "E": E, "N": N, "g": g}
+
+
+def dflux_dz(seg, k, nu):
+    """F_nu / h [cm^-2] of segment k at the observed frequency nu, as synrad.SEDsyn adds it (dFlux_dz * DeltaZ,
+    photon energy h nu / (g delta) in the comoving frame)."""
+    J = module()
+    D = seg["delta"][k] * seg["g"][k]
+    if D <= 0:
+        return 0.0
+    return J.synrad.dflux_dz(seg["N"][:, k], seg["B"][k], float(J.constants.h) * nu / D, seg["E"], seg["delta"][k],
+                             seg["g"][k], seg["R"][k], seg["R_in"][k], "e") * seg["dz"][k]
 
 
 def emission(seg, nu):
     """Comoving j'_nu' [erg s^-1 cm^-3 Hz^-1 sr^-1] and alpha'_nu' [cm^-1] per segment at the OBSERVED frequency nu,
-    i.e. at nu' = nu/delta, with the code's jsync / alpha_sync (sync_approx as loaded by setup()).
+    i.e. at nu' = nu/(g delta), with the code's jsync / alpha_sync (sync_approx as loaded by setup()); g = 1 unless the
+    run has grav_redshift on (load_segments). Callers transform the emission with D = g delta, as synrad.dFlux_dz.
     Segments with N = 0 get j = alpha = 0.
     """
     J = module()
@@ -84,7 +104,7 @@ def emission(seg, nu):
         n = seg["N"][:, k]
         if not np.any(n > 0):
             continue
-        eph = h * nu / seg["delta"][k]
+        eph = h * nu / (seg["delta"][k] * seg["g"][k])
         j[k] = J.synrad.jsync(eph, seg["B"][k], n, seg["E"], "e") * h
         a[k] = J.synrad.alpha_sync(eph, seg["B"][k], n, seg["E"], "e")
     return j, a

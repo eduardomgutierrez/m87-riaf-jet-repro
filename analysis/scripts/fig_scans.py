@@ -51,12 +51,27 @@ SED_LEGEND = {
 RADIO_LEGEND = {"lj": dict(ncol=2, labelspacing=0.1, borderaxespad=0.05)}
 
 
+def grids(base):
+    """Scan values per parameter: the SCANS values with the one nearest to the base value replaced by it (nearest in
+    log for scale parameters spanning more than a decade), so that every panel contains the base model."""
+    out = {}
+    for k, (vals, _, _) in SCANS.items():
+        v = np.array(vals, float)
+        if not np.any(np.isclose(v, base[k])):
+            log = np.all(v > 0) and v.max() / v.min() > 10
+            d = np.abs(np.log(v / base[k])) if log else np.abs(v - base[k])
+            v[np.argmin(d)] = base[k]
+        out[k] = [float(x) for x in v]
+    return out
+
+
 def fmt_value(v, fmt):
-    """Legend value: fmt.format(v), A x 10^n (10^n when A = 1) for fmt == 'sci', v / 1e42 for fmt == 'e42'."""
+    """Legend value: fmt.format(v) (3 significant digits), A x 10^n (10^n when A = 1) for fmt == 'sci', v / 1e42 (2
+    significant digits) for fmt == 'e42'."""
     if fmt == "e42":
-        return f"{v / 1e42:g}"
+        return f"{float(f'{v / 1e42:.2g}'):g}"
     if fmt != "sci":
-        return fmt.format(v)
+        return fmt.format(float(f"{v:.3g}"))
     e = int(np.floor(np.log10(abs(v))))
     m = round(v / 10**e, 2)
     return rf"$10^{{{e}}}$" if m == 1 else rf"${m:g}\times10^{{{e}}}$"
@@ -85,7 +100,7 @@ def spectrum(pars):
 
 def compute(nproc):
     base = base_params()
-    jobs = [(k, v) for k, (vals, _, _) in SCANS.items() for v in vals]
+    jobs = [(k, v) for k, vals in grids(base).items() for v in vals]
     pars = [dict(base, **{k: v}) for k, v in jobs]
     with get_context("fork").Pool(nproc) as pool:
         spec = pool.map(spectrum, pars)
@@ -99,7 +114,7 @@ def compute(nproc):
 
 
 def check_base(res, base):
-    """The base-model spectrum of every scan must equal the run.x total of analysis/runs/jet_riaf."""
+    """The base-model spectrum of every scan must equal the run.x total of RUNS/jet_riaf."""
     f = np.loadtxt(RUNS / "jet_riaf" / "Flux_e.dat", comments="#")
     fc = np.loadtxt(RUNS / "jet_riaf" / "FluxCJ_e.dat", comments="#")
     ref = np.exp(np.interp(np.log(NU), np.log(f[:, 0]), np.log(f[:, -1] + fc[:, -1] + 1e-300)))
@@ -114,7 +129,9 @@ def check_base(res, base):
 def plot(res, base, kind, outpath):
     fig, axs = plt.subplots(3, 3, figsize=(13, 11), sharex=True, sharey=True,
                             gridspec_kw={"hspace": 0.06, "wspace": 0.06})
-    for ax, (k, (vals, label, fmt)) in zip(axs.flat, SCANS.items()):
+    grid = grids(base)
+    for ax, (k, (_, label, fmt)) in zip(axs.flat, SCANS.items()):
+        vals = grid[k]
         cols = plt.cm.viridis(np.linspace(0, 0.9, len(vals)))
         for v, c in zip(vals, cols):
             s = res[f"{k}={v!r}"]
@@ -168,7 +185,7 @@ def main():
     plot(res, base, "sed", a.outdir / "Scans_SED.pdf")
     plot(res, base, "radio", a.outdir / "Scans_radio.pdf")
     provenance.write(OUT / "provenance.json", code={"extended-jet": provenance.git_state(JETCODE)},
-                     config=NML.name, base=base, scans={k: v[0] for k, v in SCANS.items()}, base_check=chk,
+                     config=NML.name, base=base, scans=grids(base), base_check=chk,
                      figures=["Scans_SED.pdf", "Scans_radio.pdf"], outdir=str(a.outdir))
 
 

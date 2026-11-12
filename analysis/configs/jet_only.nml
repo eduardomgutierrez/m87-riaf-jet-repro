@@ -1,14 +1,15 @@
-! Jet-only scenario: the representative Jet-only model of the paper (set "d1"). Same as jet_riaf.nml except
-! z0, a_inj, Lj and fnT. Lengths in R_g, energies in eV. Run with: python analysis/scripts/run_models.py jet_only
+! Jet-only scenario: jet of the paper's Jet-only model. As in jet_riaf.nml, z0, zmax_inj, facc, fnT, p, Lj, a_inj and
+! gammaIndex are the maximum-likelihood values of the fit to the data (here without the RIAF); the other parameters and
+! the switches are the same. Lengths in R_g, energies in eV. Run with: python analysis/scripts/run_models.py jet_only
 &model
   M_BH = 6.5d9, dist_mpc = 16.8d0, incl_deg = 17.d0
   gj0 = 1.01d0
-  z0_rg = 6.d0, zmax_rg = 1.2d6, zmax_inj_rg = 6840.d0
+  z0_rg = 2.009060202d0, zmax_rg = 1.2d6, zmax_inj_rg = 24256.33282d0
   r_br_rg = 46.d0, z_br_rg = 140.d0, z_acc_rg = 200.d0, rin_0_rg = 0.d0
   geomIndex_out = 0.56d0, geomIndex_in = 0.6d0
-  facc = 1d-2, fnT = 0.0226d0, p = 2.05d0
+  facc = 0.06470101534d0, fnT = 0.2609772736d0, p = 2.145669779d0
   EminFF_eV = 1d6, Emin_injFF_eV = 2d6, EmaxFF_eV = 5d15
-  Lj = 2d43, sigma_0 = 100d0, a_inj = 0.5d0, gammaIndex = 0.16d0
+  Lj = 6.068713846d42, sigma_0 = 100d0, a_inj = 0.7156255815d0, gammaIndex = 0.1920551088d0
 /
 &run
   outdir = 'analysis/runs/jet_only'
@@ -19,4 +20,5 @@
   JET_ = .true., CJ_ = .true., NE_calc = .true., Np_calc = .false., radsyn_calc = .true.
   print_tlosses = .false., sort_outputs = .false.
   fix_norm_taper = .true., fix_inj_emin = .true.
+  grav_redshift = .true., aperture_area = .true.
 /

@@ -45,7 +45,7 @@ def tau1_height(seg, nu):
     """(z [cm] beyond which the on-axis optical depth drops below 1 (jet side) or None if thin everywhere,
     tau at the first emitting segment)."""
     _, a = jetcode.emission(seg, nu)
-    tau = a * 2 * seg["R"] / (seg["delta"] * SIN_I)
+    tau = a * 2 * seg["R"] / (seg["delta"] * seg["g"] * SIN_I)
     tau_base = float(tau[a > 0][0])
     thick = np.where(tau >= 1)[0]
     if len(thick) == 0:
@@ -67,8 +67,7 @@ def flux_within(run, nu, y_mas):
     for jet in ("", "CJ"):
         seg = jetcode.load_segments(run, jet)
         for k in range(1, len(seg["z"])):
-            dF = J.synrad.dflux_dz(seg["N"][:, k], seg["B"][k], h * nu / seg["delta"][k], seg["E"], seg["delta"][k],
-                                   seg["R"][k], seg["R_in"][k], "e") * seg["dz"][k] * h * 1e26
+            dF = jetcode.dflux_dz(seg, k, nu) * h * 1e26
             out += dF * (z_proj_mas(seg["z"][k]) <= np.asarray(y_mas))
     return out
 

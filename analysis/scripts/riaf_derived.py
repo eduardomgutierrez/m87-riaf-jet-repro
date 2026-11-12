@@ -28,6 +28,10 @@ mdot = {r: Mout*(r/Rs)**0.4 for r in (21, R_IN)}
 for r, m in mdot.items():
     print(f"Mdot(r={r} Rs) = {m/Msun*yr:.3e} Msun/yr = {m:.3e} g/s")
 dg = json.load(open(S/"diagnostics.json")); print("L_acc(inner) =", dg["inner_accretion_power_erg_s"], " L_rad =", dg["total_luminosity_erg_s"])
+# jet power of the Jet+RIAF model (each jet), for the jet efficiency eta_j = L_j / L_acc
+import re
+Lj = float(re.search(r"\bLj\s*=\s*([0-9.+\-eEdD]+)", (R/"analysis/configs/jet_riaf.nml").read_text()).group(1).lower().replace("d", "e"))
+print(f"L_j = {Lj:.4g} erg/s per jet: eta_j = {Lj/dg['inner_accretion_power_erg_s']:.4f} per jet")
 import subprocess, datetime
 git = lambda *a: subprocess.run(["git", *a], cwd=R, capture_output=True, text=True).stdout.strip()
 prov = {"run": run.name, "date": datetime.date.today().isoformat(),
@@ -39,5 +43,5 @@ prov = {"run": run.name, "date": datetime.date.today().isoformat(),
         "frac_nuLnu_r_lt_Rstar_over_cosi": frac_ap,
         "Mdot_21RS_Msun_yr": mdot[21]/Msun*yr, "Mdot_BH_1.1RS_g_s": mdot[R_IN], "Mdot_BH_1.1RS_Msun_yr": mdot[R_IN]/Msun*yr,
         "L_acc_erg_s": dg["inner_accretion_power_erg_s"], "L_rad_erg_s": dg["total_luminosity_erg_s"],
-        "eta_j_per_jet_for_Lj_1.2e43": 1.2e43/dg["inner_accretion_power_erg_s"]}
+        "Lj_jet_riaf_erg_s": Lj, "eta_j_per_jet": Lj/dg["inner_accretion_power_erg_s"]}
 json.dump(prov, open(run/"provenance.json", "w"), indent=2); print("wrote", run/"provenance.json")

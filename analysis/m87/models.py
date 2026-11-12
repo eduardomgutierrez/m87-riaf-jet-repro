@@ -37,6 +37,8 @@ class Model:
             else self.total[self.aperture_index(r_rg)]
         y = self.nu * f
         pos = y > 0
+        if not pos.any():  # e.g. an aperture below the jet base with no RIAF: no emission at all
+            return np.zeros(len(nu))
         out = np.exp(np.interp(np.log(nu), np.log(self.nu[pos]), np.log(y[pos]), left=-np.inf, right=-np.inf))
         return out
 

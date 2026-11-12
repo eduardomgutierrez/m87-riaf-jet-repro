@@ -9,15 +9,21 @@ It contains the two model codes (as git submodules pinned to the exact commits u
 data, the model configurations, and one script per figure or table.
 
 The model has a thermal radiatively inefficient accretion flow (RIAF) with winds and a multizone, initially magnetically
-dominated jet with continuous electron injection, cooling and synchrotron self-absorption. The jet emission is integrated
-only up to the height matching each instrument's effective aperture and compared with the flux measured at that
-angular scale (EHT multi-wavelength campaign 2017). Two scenarios are modelled: *Jet+RIAF* (the RIAF dominates the EHT
-230 GHz core) and *Jet-only*.
+dominated jet with continuous electron injection, cooling and synchrotron self-absorption. For each instrument, the jet
+emission that projects within its effective aperture is compared with the flux measured at that angular scale (EHT
+multi-wavelength campaign 2017). Two scenarios are modelled: *Jet+RIAF* (the RIAF dominates the EHT 230 GHz core) and
+*Jet-only*.
+
+This version corresponds to the revised paper, in which the jet parameters of both scenarios are fitted to the data.
+The repository reproduces the two best-fitting (maximum-likelihood) models and everything derived from them. The Markov
+chain Monte Carlo sampling of the jet parameters is not included, so the results that need the chains are not produced
+here: Appendix B (Table B1 and Figs. B1–B3), the posterior ranges quoted in the text and the shaded bands of Fig. 3.
+Commit `a97b73e` of this repository reproduces the first submitted version, whose models were tuned by hand.
 
 ## Contents
 
 ```
-codes/extended-jet   ExtendedJet (jet code; Fortran 90 + OpenMP, f2py wrapper), tag paper-v2.1 = b36be22
+codes/extended-jet   ExtendedJet (jet code; Fortran 90 + OpenMP, f2py wrapper), tag paper-v2.3 = 1a8abf7
 codes/thermal-riaf   thermal-riaf (RIAF code; Python hydrodynamics + C++ radiative transfer), tag paper-v1 = 5e0cd49
 data/eht_mwl2017/    EHT MWL 2017 data release (EHT MWL Science WG 2021, ApJL 911, L11; DOI 10.25739/mhh2-cw46)
 data/obs_data/       SED points per instrument: nu [Hz], nuF_nu [erg s^-1 cm^-2], error (negative = upper limit)
@@ -30,12 +36,14 @@ reference/           the paper values that `make check` compares with
 | Configuration | Model |
 |---|---|
 | `analysis/configs/riaf_m87.toml` | RIAF of the Jet+RIAF scenario (M = 6.5×10⁹ M☉, Ṁ(R) ∝ R^0.4, β = 0.9, α = 0.1, δ = 0.3) |
-| `analysis/configs/jet_riaf.nml` | jet of the Jet+RIAF scenario |
-| `analysis/configs/jet_only.nml` | representative Jet-only model ("d1") |
-| `analysis/configs/ro_B.nml`, `ro_C.nml` | Jet+RIAF variants B and C, with a larger jet power (Ro et al. 2023 magnetic field) |
+| `analysis/configs/jet_riaf.nml` | jet of the Jet+RIAF scenario (best fit) |
+| `analysis/configs/jet_only.nml` | jet of the Jet-only scenario (best fit) |
 
-All jet models use d = 16.8 Mpc, i = 17°, effective aperture radii 7.3, 26, 65, 131, 195, 650 and 3.5×10⁵ R_g
-(R_g = GM/c²), and the grid Ns = 700 segments × 1100 energy bins.
+Both jet models use d = 16.8 Mpc, i = 17°, effective aperture radii 7.3, 26, 65, 131, 195, 650 and 3.5×10⁵ R_g
+(R_g = GM/c²), and the grid Ns = 700 segments × 1100 energy bins. The gravitational redshift of the emission
+(`grav_redshift`) and the weighting of each jet segment by the fraction of its projected cross-section inside the
+aperture (`aperture_area`) are switched on. The eight fitted parameters (L_j, ε_e, p, z_0, a_e, z_max,e, g and η_acc) are
+`Lj`, `fnT`, `p`, `z0_rg`, `a_inj`, `zmax_inj_rg`, `gammaIndex` and `facc` in the namelists.
 
 ## Requirements
 
@@ -62,7 +70,7 @@ It runs the following steps in order:
 | `make build` | compiles `run.x` and the f2py module of the jet code, and the RIAF radiative code | inside `codes/` |
 | `make data` | rebuilds the SED points from the public release and compares them with `data/obs_data/` | report on screen |
 | `make riaf` | solves the RIAF hydrodynamics and computes its spectrum and derived numbers | `analysis/runs/riaf_m87/` |
-| `make models` | runs the four jet models | `analysis/runs/{jet_riaf,jet_only,ro_B,ro_C}/` |
+| `make models` | runs the two jet models | `analysis/runs/{jet_riaf,jet_only}/` |
 | `make figures` | figures, χ² table and derived numbers | `output/figures/`, `output/tables/`, `analysis/runs/` |
 | `make check` | compares every number with the paper values in `reference/` | PASS/FAIL report |
 
@@ -74,17 +82,17 @@ Every run writes a `provenance.json` with the code commits and the parameters us
 | Paper item | Script | Output |
 |---|---|---|
 | Fig. 2, jet power and magnetisation profiles (illustrative parameters) | `fig_jet_power_illustrative.py` | `output/figures/Jet_power.pdf` |
-| Fig. 3, SEDs of the Jet-only and Jet+RIAF models per effective aperture | `fig_sed.py` | `output/figures/SED_FluxDensity.pdf` |
-| χ² per band and in total | `chi2_table.py` | `output/tables/chi2.tex`, `analysis/runs/chi2.json` |
+| Fig. 3, SEDs of the Jet-only and Jet+RIAF models per effective aperture (best-fitting models, without the posterior bands) | `fig_sed.py` | `output/figures/SED_FluxDensity.pdf` |
+| χ² per band and in total (the χ²/(N − k) of the paper has k = 8 for the Jet-only and k = 10 for the Jet+RIAF model) | `chi2_table.py` | `output/tables/chi2.tex`, `analysis/runs/chi2.json` |
 | Fig. 4, synthetic 43 GHz map | `fig_maps.py` | `output/figures/Map_I_43GHz.pdf`, `analysis/runs/maps.provenance.json` |
 | Fig. 5, spectral-index maps 22–43 and 43–86 GHz | `fig_maps.py` | `output/figures/Map_spix.pdf` |
 | Figs. A1–A2, parameter scans around the Jet+RIAF jet | `fig_scans.py` | `output/figures/Scans_SED.pdf`, `Scans_radio.pdf` |
 | RIAF numbers (Ṁ, L_acc, jet efficiency, compactness of the RIAF emission) | `riaf_derived.py` (run by `make riaf`) | `analysis/runs/riaf_m87/provenance.json` |
 | Jet numbers (τ = 1 heights and core shift, B′ and σ′ along the jet, 230 GHz flux within a radius) | `derived_quantities.py` | `analysis/runs/derived/derived.json` |
 | Inverse-Compton estimate | `ic_estimate.py` | `analysis/runs/derived/ic_estimate.json` |
-| Ro et al. (2023)-compatible variants (B′, jet efficiency, χ²) | `ro_variants.py` | `analysis/runs/ro_variants.json` |
 
-Figure 1 of the paper is a schematic and is not produced here. Each script can also be run on its own from the
+Figure 1 of the paper is a schematic and is not produced here; neither are the results that need the chains of the fits
+(see above). Each script can also be run on its own from the
 repository root, e.g. `python analysis/scripts/fig_sed.py --outdir somewhere/`; `--help` lists the options.
 
 ## Checking the reproduction

@@ -9,9 +9,10 @@ projected as a disc perpendicular to the jet, r = sqrt(x^2 + (y/cos i)^2).
 Each map is convolved (FFT) with a Gaussian beam normalised to unit peak, so pixel values are mJy/beam.
 
 The RIAF is included at all three frequencies; each spectral-index pair is convolved to the beam of its lower
-frequency (BEAMS).
+frequency (BEAMS). With the gravitational redshift on in the run's namelist, delta stands for g delta.
 
     python analysis/scripts/fig_maps.py [--outdir DIR] [--run jet_riaf] [--riaf riaf_m87]
+    python analysis/scripts/fig_maps.py --outdir DIR --run jet_only --riaf none      # Jet-only model, no RIAF
 """
 import argparse
 import json
@@ -55,7 +56,8 @@ def jet_tables(run, nu):
         seg = jetcode.load_segments(run, jet)
         j, a = jetcode.emission(seg, nu)
         ok = j > 0
-        out[jet] = (np.log(seg["z"][ok]), np.log(j[ok]), np.log(a[ok]), seg["delta"][ok], seg["R"][ok])
+        D = seg["delta"] * seg["g"]       # Doppler factor times the gravitational redshift (g = 1 if it is off)
+        out[jet] = (np.log(seg["z"][ok]), np.log(j[ok]), np.log(a[ok]), D[ok], seg["R"][ok])
         assert np.all(seg["R_in"] == 0), "inner radius not supported"
     return out
 
@@ -110,7 +112,7 @@ def make_maps(run, riaf):
         y = np.arange(-ymax, ymax + PIX / 2, PIX)
         for g in pair:
             I_jet = jet_intensity(tabs[g], x, y)
-            I_riaf = riaf_intensity(riaf, g, x, y)
+            I_riaf = riaf_intensity(riaf, g, x, y) if riaf else np.zeros_like(I_jet)
             m, s_tot = convolve(I_jet + I_riaf, BEAMS[beam_ghz])
             out[(g, beam_ghz)] = (x, y, m)
             info[f"{g}GHz_beam{beam_ghz}"] = {
@@ -131,8 +133,7 @@ def flux_check(run, info):
             seg = jetcode.load_segments(run, jet)
             for k in range(1, len(seg["z"])):
                 if seg["z"][k] * np.sin(INCL) / (MAS * DIST) <= ymax:
-                    tot += J.synrad.dflux_dz(seg["N"][:, k], seg["B"][k], h * nu / seg["delta"][k], seg["E"],
-                                             seg["delta"][k], seg["R"][k], seg["R_in"][k], "e") * seg["dz"][k] * h
+                    tot += jetcode.dflux_dz(seg, k, nu) * h
         res[f"{g}GHz"] = {"ymax_mas": ymax, "code_mJy": tot * 1e26}
     return res
 
@@ -204,10 +205,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", type=Path, default=FIGURES)
     ap.add_argument("--run", default="jet_riaf")
-    ap.add_argument("--riaf", default="riaf_m87")
+    ap.add_argument("--riaf", default="riaf_m87", help="RIAF run, or 'none' for the Jet-only model")
     a = ap.parse_args()
     jetcode.setup(RUNS / a.run / f"{a.run}.nml")
-    maps, info = make_maps(a.run, a.riaf)
+    maps, info = make_maps(a.run, None if a.riaf.lower() == "none" else a.riaf)
     info["flux_check"] = flux_check(a.run, info)
     caption = {"beams_FWHM_mas": {f"{k} GHz": v for k, v in BEAMS.items()},
                "contours": {f"{g} GHz (beam {b})": [float(v) for v in levels(maps[(g, b)][2])]
