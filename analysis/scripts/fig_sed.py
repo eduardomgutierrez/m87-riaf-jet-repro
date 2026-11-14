@@ -35,6 +35,8 @@ OUT = "SED_FluxDensity.pdf"
 MODELS = [("Jet-only", "jet_only", None), ("Jet+RIAF", "jet_riaf", "riaf_m87")]  # rows: (label, jet run, RIAF run)
 XLIM, YLIM = (5e8, 3e20), (5e-15, 1e-11)
 XLIM_GHZ, YLIM_JY, RES_LIM, RES_TICKS = (1, 1e3), (1e-2, 1e1), (-1.3, 3), [-1, 0, 1, 2]
+# residuals of the right (radio) panels: all within +-0.6 with their error bars, so a narrower range shows their structure
+RES_LIM_RADIO, RES_TICKS_RADIO = (-0.8, 0.8), [-0.5, 0, 0.5]
 DODGE_DEX, DODGE_GAP = 0.05, 0.06  # radio panels: points closer than DODGE_GAP dex are spread DODGE_DEX dex apart
 MARKERS = {"EHT": "o", "GMVA": "s", "EAVN": "^", "HSA": "<", "EVN": "v", "ALMA": "X",  # unique among radio arrays
            "KVN": "D", "VERA": "p", "VLBA": "h", "SMA": "*",
@@ -149,11 +151,12 @@ def plot_row(fig, gs, title, model, obs, top_row):
             ax2.text(*LABEL_POS[r], lab, backgroundcolor=c, fontsize=16, rotation=60, color="white")
     ax2.set(xscale="log", yscale="log", xlim=XLIM_GHZ, ylim=YLIM_JY, ylabel=r"$S_\nu~[{\rm Jy}]$")
     ax2.tick_params(axis="x", labelbottom=False)
-    ax2r.set(xscale="log", xlim=XLIM_GHZ, ylim=RES_LIM, xlabel=r"${\rm Frequency~[GHz]}$", ylabel=r"$\Delta S/S$")
-    for ax in (ax1r, ax2r):
+    ax2r.set(xscale="log", xlim=XLIM_GHZ, ylim=RES_LIM_RADIO, xlabel=r"${\rm Frequency~[GHz]}$", ylabel=r"$\Delta S/S$")
+    for ax, ticks, minor in ((ax1r, RES_TICKS, np.arange(-1, 3.01, 0.5)),
+                             (ax2r, RES_TICKS_RADIO, np.arange(-0.75, 0.751, 0.25))):
         ax.axhline(0, color="k", ls="--", lw=1)
-        ax.set_yticks(RES_TICKS)
-        ax.set_yticks(np.arange(-1, 3.01, 0.5), minor=True)
+        ax.set_yticks(ticks)
+        ax.set_yticks(minor, minor=True)
     if not top_row:
         return
 
