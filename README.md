@@ -3,7 +3,7 @@
 This repository reproduces the model results, figures and numbers of
 
 > E. M. Gutiérrez, S. del Palacio & T. T. Mazzei, *The accretion flow and jet of M87: broadband modelling across
-> spatial scales*, submitted.
+> spatial scales*, submitted ([arXiv:2610.26434](https://arxiv.org/abs/2610.26434)).
 
 It contains the two model codes (as git submodules pinned to the exact commits used in the paper), the observational
 data, the model configurations, and one script per figure or table.
@@ -15,9 +15,12 @@ multi-wavelength campaign 2017). Two scenarios are modelled: *Jet+RIAF* (the RIA
 *Jet-only*.
 
 This version corresponds to the revised paper, in which the jet parameters of both scenarios are fitted to the data.
-The repository reproduces the two best-fitting (maximum-likelihood) models and everything derived from them. The Markov
-chain Monte Carlo sampling of the jet parameters is not included, so the results that need the chains are not produced
-here: Appendix B (Table B1 and Figs. B1–B3), the posterior ranges quoted in the text and the shaded bands of Fig. 3.
+`make all` reproduces the two best-fitting (maximum-likelihood) models and everything derived from them. The fit itself,
+a Markov chain Monte Carlo (MCMC) sampling of eight jet parameters, takes 18–21 hours per scenario on 12 cores and is run
+separately (see [Fitting the jet parameters](#fitting-the-jet-parameters-mcmc)); it gives the posterior distributions
+of Appendix B and the medians and ranges of the fitted parameters in Table 1. The quantities computed from posterior
+samples (the shaded bands of Fig. 3 and the posterior ranges of the fluxes, the magnetic field and the jet efficiency)
+are not produced here.
 Commit `a97b73e` of this repository reproduces the first submitted version, whose models were tuned by hand.
 
 ## Contents
@@ -29,7 +32,7 @@ data/eht_mwl2017/    EHT MWL 2017 data release (EHT MWL Science WG 2021, ApJL 91
 data/obs_data/       SED points per instrument: nu [Hz], nuF_nu [erg s^-1 cm^-2], error (negative = upper limit)
 analysis/configs/    model parameters (see below)
 analysis/m87/        shared Python code: data I/O, effective apertures, chi^2, plot style, provenance
-analysis/scripts/    one script per figure or table, the model driver and the result check
+analysis/scripts/    one script per figure or table, the model driver, the MCMC fit and the result check
 reference/           the paper values that `make check` compares with
 ```
 
@@ -50,7 +53,7 @@ aperture (`aperture_area`) are switched on. The eight fitted parameters (L_j, ε
 - Linux or macOS with `gfortran` (with OpenMP), a C++17 compiler with OpenMP, CMake ≥ 3.16, Boost and GSL
   (Debian/Ubuntu: `sudo apt install build-essential gfortran cmake libboost-dev libgsl-dev`)
 - conda or mamba, for the Python environment in `environment.yml` (Python 3.12, numpy, scipy, astropy, matplotlib,
-  meson/ninja for the f2py build)
+  meson/ninja for the f2py build, and bilby with emcee for the fits)
 
 ## Quick start
 
@@ -90,9 +93,10 @@ Every run writes a `provenance.json` with the code commits and the parameters us
 | RIAF numbers (Ṁ, L_acc, jet efficiency, compactness of the RIAF emission) | `riaf_derived.py` (run by `make riaf`) | `analysis/runs/riaf_m87/provenance.json` |
 | Jet numbers (τ = 1 heights and core shift, B′ and σ′ along the jet, 230 GHz flux within a radius) | `derived_quantities.py` | `analysis/runs/derived/derived.json` |
 | Inverse-Compton estimate | `ic_estimate.py` | `analysis/runs/derived/ic_estimate.json` |
+| Fitted parameters (posterior medians and ranges of Table 1, posterior distributions of Appendix B) | `jet_mcmc.py` (not run by `make all`; see below) | `analysis/runs/mcmc/<fit>/summary.json`, `corner.png` |
 
-Figure 1 of the paper is a schematic and is not produced here; neither are the results that need the chains of the fits
-(see above). Each script can also be run on its own from the
+Figure 1 of the paper is a schematic and is not produced here; neither are the quantities computed from posterior
+samples (see above). Each script can also be run on its own from the
 repository root, e.g. `python analysis/scripts/fig_sed.py --outdir somewhere/`; `--help` lists the options.
 
 ## Checking the reproduction
@@ -102,6 +106,50 @@ paper runs in `reference/expected.json`, and every spectrum of the parameter sca
 relative tolerance of 10⁻³. It also reports whether the model output files are bit-identical to the paper runs. With
 gfortran 15 on x86-64 they are. Other compilers or CPUs can change the last digits (the jet code is built with
 `-O3 -march=native -ffast-math`), so a hash difference is only a note; the numerical comparison is the test.
+
+## Fitting the jet parameters (MCMC)
+
+`analysis/scripts/jet_mcmc.py` runs the fits of the paper (Appendix B). It samples the posterior distribution of eight
+jet parameters with the ensemble sampler `emcee`, through `bilby`. It is not part of `make all`.
+
+```bash
+make build riaf                                           # once: the codes and the RIAF spectrum
+make mcmc-test                                            # quick test, about 6 minutes on 4 cores
+python analysis/scripts/jet_mcmc.py jet_riaf --npool 12   # the chain of the Jet+RIAF scenario
+python analysis/scripts/jet_mcmc.py jet_only --npool 12   # the chain of the Jet-only scenario
+```
+
+`make mcmc NPOOL=12` runs the two chains one after the other.
+
+| Parameter | Namelist key | Prior range | Uniform in |
+|---|---|---|---|
+| Jet power, L_j [erg s⁻¹] | `Lj` | 10⁴²–10⁴⁴ | log |
+| Fraction of L_j injected into electrons, ε_e | `fnT` | 10⁻³–0.3 | log |
+| Electron power-law index, p | `p` | 1.9–2.6 | linear |
+| Jet base height, z_0 [R_g] | `z0_rg` | 2–50 | log |
+| Injection profile index, a_e | `a_inj` | −0.5–2 | linear |
+| Injection scale height, z_max,e [R_g] | `zmax_inj_rg` | 10³–10⁵ | log |
+| Bulk acceleration parameter, g | `gammaIndex` | 0.10–0.20 | linear |
+| Acceleration efficiency, η_acc | `facc` | 10⁻⁴–0.1 | log |
+
+- **Model.** Only these eight parameters are sampled. Everything else stays at the values of
+  `analysis/configs/<fit>.nml`, and the RIAF of the Jet+RIAF scenario is fixed.
+- **Likelihood.** Gaussian, with the χ² of the paper: 45 points, each compared with the model flux within its effective
+  aperture, with a systematic uncertainty of 10 per cent added in quadrature. A model above an upper limit is rejected.
+- **Chain.** 48 walkers and 3000 steps by default (`--nwalkers`, `--nsteps`), started from the walker positions of the
+  paper's chains. The first 30 per cent of the steps are discarded as burn-in.
+- **Cost.** Each model takes 6–7 s on one core, and each worker needs about 0.8 GB of memory. A chain computes about
+  9×10⁴ models and takes 18–21 hours with `--npool 12`. The chain is saved every 100 steps (`--segment`), and the same command
+  continues an interrupted chain.
+- **Outputs**, in `analysis/runs/mcmc/<fit>/`: `emcee_<fit>/chain.dat` (the chain), `evals/*.jsonl` (every model
+  computed, with its parameters and χ²), `summary.json` (acceptance fraction, autocorrelation times, posterior medians
+  with the 16th and 84th percentiles, and the maximum-likelihood sample with its χ²), `best_fit.nml` (that sample as a
+  namelist) and `corner.png`. `--summary` rebuilds the summary from a stored chain. `make clean` keeps the chains.
+
+`make mcmc-test` checks, for both scenarios, that the likelihood at the published best fit gives the χ² of the paper,
+and runs a 3-step chain with a restart. A new chain will not be identical to the paper's, because the random numbers
+of the sampler are not fixed: expect its medians to agree with Table 1 within the sampling error, and its maximum-likelihood sample to
+differ slightly from the published best fit. The paper chains were run with bilby 2.8.2 and emcee 3.1.6.
 
 ## Codes
 
@@ -120,7 +168,25 @@ ApJL 911, L11; https://doi.org/10.25739/mhh2-cw46). `data/obs_data/` holds the S
 per instrument. `analysis/scripts/make_obs_data.py` rebuilds them from the release, and lists, with its reason, every
 value that differs from a plain conversion.
 
-## License and citation
+## License
 
 The scripts in this repository are distributed under the GNU GPL v3 (`LICENSE`); the codes keep their own licenses.
-If you use this material, please cite the paper above.
+
+## Citation
+
+If you use this material, please cite the paper ([arXiv:2610.26434](https://arxiv.org/abs/2610.26434)):
+
+```bibtex
+@ARTICLE{2026arXiv261026434G,
+       author = {{Guti{\'e}rrez}, E.~M. and {del Palacio}, S. and {Mazzei}, T.~T.},
+        title = "{The accretion flow and jet of M87: broadband modelling across spatial scales}",
+      journal = {arXiv e-prints},
+         year = 2026,
+        month = oct,
+          eid = {arXiv:2610.26434},
+archivePrefix = {arXiv},
+       eprint = {2610.26434},
+ primaryClass = {astro-ph.HE},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2026arXiv261026434G}
+}
+```

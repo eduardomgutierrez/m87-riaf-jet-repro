@@ -12,3 +12,4 @@ dependencies:
   - pip
   - pip:
       - tomli-w
+      - bilby   # fit of the jet parameters (analysis/scripts/jet_mcmc.py); installs emcee and corner

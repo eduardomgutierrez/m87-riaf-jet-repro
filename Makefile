@@ -6,14 +6,18 @@
 #   make figures   paper figures, chi2 table and derived numbers            -> output/, analysis/runs/
 #   make check     compare the results with the paper values (reference/)
 #   make all       everything above, in order
-#   make clean     remove all outputs (runs and figures); `make distclean` also removes the builds
+#   make mcmc-test quick test of the fit of the jet parameters (analysis/scripts/jet_mcmc.py), both scenarios
+#   make mcmc      the two chains of the paper, one after the other (18-21 hours each with NPOOL=12); not part of `all`
+#   make clean     remove all outputs (runs and figures) except the chains in analysis/runs/mcmc;
+#                  `make distclean` also removes the builds
 PY      ?= python
+NPOOL   ?= 4
 JETDIR   = codes/extended-jet/Code
 RIAFDIR  = codes/thermal-riaf
 SCRIPTS  = analysis/scripts
 export LC_NUMERIC = C
 
-.PHONY: all build data riaf models figures check clean distclean
+.PHONY: all build data riaf models figures check mcmc-test mcmc clean distclean
 
 all: build data riaf models figures check
 
@@ -43,8 +47,17 @@ figures:
 check:
 	$(PY) $(SCRIPTS)/check_results.py
 
+mcmc-test:
+	$(PY) $(SCRIPTS)/jet_mcmc.py jet_riaf --test --npool $(NPOOL)
+	$(PY) $(SCRIPTS)/jet_mcmc.py jet_only --test --npool $(NPOOL)
+
+mcmc:
+	$(PY) $(SCRIPTS)/jet_mcmc.py jet_riaf --npool $(NPOOL)
+	$(PY) $(SCRIPTS)/jet_mcmc.py jet_only --npool $(NPOOL)
+
 clean:
-	rm -rf analysis/runs/* output
+	test ! -d analysis/runs || find analysis/runs -mindepth 1 -maxdepth 1 ! -name mcmc -exec rm -rf {} +
+	rm -rf output
 
 distclean: clean
 	$(MAKE) -C $(JETDIR) clean
