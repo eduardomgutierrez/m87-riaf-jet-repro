@@ -3,7 +3,7 @@
 This repository reproduces the model results, figures and numbers of
 
 > E. M. Gutiérrez, S. del Palacio & T. T. Mazzei, *The accretion flow and jet of M87: broadband modelling across
-> spatial scales*, submitted ([arXiv:2610.26434](https://arxiv.org/abs/2610.26434)).
+> spatial scales*, accepted for publication in MNRAS ([arXiv:2610.26434](https://arxiv.org/abs/2610.26434)).
 
 It contains the two model codes (as git submodules pinned to the exact commits used in the paper), the observational
 data, the model configurations, and one script per figure or table.
@@ -14,7 +14,7 @@ emission that projects within its effective aperture is compared with the flux m
 multi-wavelength campaign 2017). Two scenarios are modelled: *Jet+RIAF* (the RIAF dominates the EHT 230 GHz core) and
 *Jet-only*.
 
-This version corresponds to the revised paper, in which the jet parameters of both scenarios are fitted to the data.
+This version corresponds to the accepted paper, in which the jet parameters of both scenarios are fitted to the data.
 `make all` reproduces the two best-fitting (maximum-likelihood) models and everything derived from them. The fit itself,
 a Markov chain Monte Carlo (MCMC) sampling of eight jet parameters, takes 18–21 hours per scenario on 12 cores and is run
 separately (see [Fitting the jet parameters](#fitting-the-jet-parameters-mcmc)); it gives the posterior distributions
@@ -174,7 +174,8 @@ The scripts in this repository are distributed under the GNU GPL v3 (`LICENSE`);
 
 ## Citation
 
-If you use this material, please cite the paper ([arXiv:2610.26434](https://arxiv.org/abs/2610.26434)):
+If you use this material, please cite the paper (accepted for publication in MNRAS;
+[arXiv:2610.26434](https://arxiv.org/abs/2610.26434)):
 
 ```bibtex
 @ARTICLE{2026arXiv261026434G,
